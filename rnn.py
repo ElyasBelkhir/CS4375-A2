@@ -31,29 +31,53 @@ class RNN(nn.Module):
 
     def forward(self, inputs):
         # [to fill] obtain hidden layer representation (https://pytorch.org/docs/stable/generated/torch.nn.RNN.html)
-        _, hidden = 
+        _, hidden = self.rnn(inputs)
         # [to fill] obtain output layer representations
-
         # [to fill] sum over output 
-
         # [to fill] obtain probability dist.
 
         return predicted_vector
 
 
-def load_data(train_data, val_data):
+def load_data(train_data, val_data, test_data):
     with open(train_data) as training_f:
         training = json.load(training_f)
     with open(val_data) as valid_f:
         validation = json.load(valid_f)
+    with open(test_data) as test_f:
+        testing = json.load(test_f)
 
     tra = []
     val = []
+    tes = []
     for elt in training:
         tra.append((elt["text"].split(),int(elt["stars"]-1)))
     for elt in validation:
         val.append((elt["text"].split(),int(elt["stars"]-1)))
-    return tra, val
+    for elt in testing:
+        tes.append((elt["text"].split(),int(elt["stars"]-1)))
+    return tra, val, tes
+
+def evaluate_model(model, data, word_embedding):
+    model.eval()
+    correct = 0
+    total = 0
+    embedding_dim = 50  # Ensure this matches your embedding dimensions
+    unk_embedding = word_embedding.get('<UNK>', np.random.rand(embedding_dim))
+    
+    for input_words, gold_label in data:
+        input_words = " ".join(input_words)
+        input_words = input_words.translate(str.maketrans("", "", string.punctuation)).split()
+        vectors = [word_embedding.get(i.lower(), unk_embedding) for i in input_words]
+        vectors = torch.tensor(vectors, dtype=torch.float).view(len(vectors), 1, -1)
+        
+        output = model(vectors)
+        predicted_label = torch.argmax(output, dim=1)
+        correct += int(predicted_label == gold_label)
+        total += 1
+
+    accuracy = correct / total
+    return accuracy
 
 
 if __name__ == "__main__":
@@ -67,7 +91,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     print("========== Loading data ==========")
-    train_data, valid_data = load_data(args.train_data, args.val_data) # X_data is a list of pairs (document, y); y in {0,1,2,3,4}
+    train_data, valid_data, test_data = load_data(args.train_data, args.val_data, args.test_data) # X_data is a list of pairs (document, y); y in {0,1,2,3,4}
 
     # Think about the type of function that an RNN describes. To apply it, you will need to convert the text data into vector representations.
     # Further, think about where the vectors will come from. There are 3 reasonable choices:
@@ -88,7 +112,7 @@ if __name__ == "__main__":
     last_train_accuracy = 0
     last_validation_accuracy = 0
 
-    while not stopping_condition:
+    while epoch < args.epochs and not stopping_condition:
         random.shuffle(train_data)
         model.train()
         # You will need further code to operationalize training, ffnn.py may be helpful
@@ -166,16 +190,18 @@ if __name__ == "__main__":
         print("Validation accuracy for epoch {}: {}".format(epoch + 1, correct / total))
         validation_accuracy = correct/total
 
-        if validation_accuracy < last_validation_accuracy and trainning_accuracy > last_train_accuracy:
+        '''if validation_accuracy < last_validation_accuracy and trainning_accuracy > last_train_accuracy:
             stopping_condition=True
             print("Training done to avoid overfitting!")
             print("Best validation accuracy is:", last_validation_accuracy)
-        else:
-            last_validation_accuracy = validation_accuracy
-            last_train_accuracy = trainning_accuracy
+        else:'''
+        last_validation_accuracy = validation_accuracy
+        last_train_accuracy = trainning_accuracy
 
         epoch += 1
 
+    #test_accuracy = evaluate_model(model, test_data, word_embedding)
+    #print(f"Test Accuracy: {test_accuracy}")
 
 
     # You may find it beneficial to keep track of training accuracy or training loss;
