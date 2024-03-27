@@ -22,7 +22,7 @@ class RNN(nn.Module):
         self.h = h
         self.numOfLayer = 1
         self.rnn = nn.RNN(input_dim, h, self.numOfLayer, nonlinearity='tanh')
-        self.W = nn.Linear(h, 5)
+        self.W = nn.Linear(h, 3)
         self.softmax = nn.LogSoftmax(dim=1)
         self.loss = nn.NLLLoss()
 
@@ -33,8 +33,10 @@ class RNN(nn.Module):
         # [to fill] obtain hidden layer representation (https://pytorch.org/docs/stable/generated/torch.nn.RNN.html)
         _, hidden = self.rnn(inputs)
         # [to fill] obtain output layer representations
-        # [to fill] sum over output 
+        output = self.W(hidden.squeeze(0))
+        # [to fill] sum over output
         # [to fill] obtain probability dist.
+        predicted_vector = self.softmax(output)
 
         return predicted_vector
 
@@ -56,6 +58,8 @@ def load_data(train_data, val_data, test_data):
         val.append((elt["text"].split(),int(elt["stars"]-1)))
     for elt in testing:
         tes.append((elt["text"].split(),int(elt["stars"]-1)))
+    count = {}
+    
     return tra, val, tes
 
 def evaluate_model(model, data, word_embedding):
@@ -102,7 +106,7 @@ if __name__ == "__main__":
 
     print("========== Vectorizing data ==========")
     model = RNN(50, args.hidden_dim)  # Fill in parameters
-    # optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
+    #optimizer = optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
     optimizer = optim.Adam(model.parameters(), lr=0.01)
     word_embedding = pickle.load(open('./word_embedding.pkl', 'rb'))
 
@@ -149,7 +153,7 @@ if __name__ == "__main__":
                 predicted_label = torch.argmax(output)
 
                 correct += int(predicted_label == gold_label)
-                # print(predicted_label, gold_label)
+                #print(predicted_label, gold_label)
                 total += 1
                 if loss is None:
                     loss = example_loss
