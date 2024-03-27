@@ -21,7 +21,7 @@ class FFNN(nn.Module):
         self.h = h
         self.W1 = nn.Linear(input_dim, h)
         self.activation = nn.ReLU() # The rectified linear unit; one valid choice of activation function
-        self.output_dim = 5
+        self.output_dim = 3
         self.W2 = nn.Linear(h, self.output_dim)
 
         self.softmax = nn.LogSoftmax(dim=-1) # The softmax function that converts vectors into probability distributions; computes log probabilities for computational benefits
@@ -92,13 +92,14 @@ def load_data(train_data, val_data, test_data):
     tra = []
     val = []
     tes = []
+
     for elt in training:
         tra.append((elt["text"].split(), int(elt["stars"]-1)))
     for elt in validation:
         val.append((elt["text"].split(), int(elt["stars"]-1)))
     for elt in test:
         tes.append((elt["text"].split(), int(elt["stars"]-1)))
-
+    
     return tra, val, tes
 
 
@@ -193,19 +194,19 @@ if __name__ == "__main__":
     # write out to results/test.out
     if args.do_train:
         print("========== Testing ==========")
-        model.eval()  # Set the model to evaluation mode
+        model.eval()
         correct = 0
-        total = len(test_data)  # Correctly initialized to the number of test instances
+        total = len(test_data)
         start_time = time.time()
         print("Testing started")
         
-        with torch.no_grad():  # No gradient computation for the testing phase
+        with torch.no_grad():  
             for input_vector, gold_label in test_data:
-                input_vector = input_vector.unsqueeze(0)  # Add a batch dimension
+                input_vector = input_vector.unsqueeze(0) 
                 predicted_vector = model(input_vector)
-                predicted_label = torch.argmax(predicted_vector, dim=1)  # Specify dimension for argmax
-                correct += (predicted_label == gold_label).sum().item()  # Correct calculation for batch size > 1
-
+                predicted_label = torch.argmax(predicted_vector, dim=1) 
+                correct += int(predicted_label == (gold_label-1))
+                print(f"Predicted: {predicted_label.item()}, Gold: {gold_label-1}")
         accuracy = correct / total
         print(f"Test Accuracy: {accuracy:.4f}")
         print("Testing completed")
