@@ -10,6 +10,8 @@ import time
 from tqdm import tqdm
 import json
 from argparse import ArgumentParser
+import matplotlib.pyplot as plt
+from sklearn.metrics import f1_score, confusion_matrix
 
 
 unk = '<UNK>'
@@ -131,6 +133,11 @@ if __name__ == "__main__":
 
     model = FFNN(input_dim = len(vocab), h = args.hidden_dim)
     optimizer = optim.SGD(model.parameters(),lr=0.01, momentum=0.9)
+
+    training_accuracy = []
+    validation_accuracy = []
+    f1_scores = []
+
     print("========== Training for {} epochs ==========".format(args.epochs))
     for epoch in range(args.epochs):
         model.train()
@@ -160,6 +167,10 @@ if __name__ == "__main__":
             loss = loss / minibatch_size
             loss.backward()
             optimizer.step()
+
+        train_accuracy = correct/total
+        training_accuracy.append(train_accuracy)
+
         print("Training completed for epoch {}".format(epoch + 1))
         print("Training accuracy for epoch {}: {}".format(epoch + 1, correct / total))
         print("Training time for this epoch: {}".format(time.time() - start_time))
@@ -171,7 +182,9 @@ if __name__ == "__main__":
         start_time = time.time()
         print("Validation started for epoch {}".format(epoch + 1))
         minibatch_size = 16 
-        N = len(valid_data) 
+        N = len(valid_data)
+        predicted_labels =[]
+        true_labels = []
         for minibatch_index in tqdm(range(N // minibatch_size)):
             optimizer.zero_grad()
             loss = None
@@ -179,6 +192,8 @@ if __name__ == "__main__":
                 input_vector, gold_label = valid_data[minibatch_index * minibatch_size + example_index]
                 predicted_vector = model(input_vector)
                 predicted_label = torch.argmax(predicted_vector)
+                predicted_labels.append(predicted_label.item())
+                true_labels.append(gold_label)
                 correct += int(predicted_label == gold_label)
                 total += 1
                 example_loss = model.compute_Loss(predicted_vector.view(1,-1), torch.tensor([gold_label]))
@@ -187,9 +202,17 @@ if __name__ == "__main__":
                 else:
                     loss += example_loss
             loss = loss / minibatch_size
+
+        val_accuracy = correct/total
+        validation_accuracy.append(val_accuracy)
+
         print("Validation completed for epoch {}".format(epoch + 1))
         print("Validation accuracy for epoch {}: {}".format(epoch + 1, correct / total))
         print("Validation time for this epoch: {}".format(time.time() - start_time))
+
+        f1 = f1_score(true_labels, predicted_labels, average = 'macro')
+        f1_scores.append(f1)
+        print("F1 Score for epoch {}: {}".format(epoch + 1, f1))
 
     # write out to results/test.out
     if args.do_train:
@@ -212,4 +235,18 @@ if __name__ == "__main__":
         print("Testing completed")
         print(f"Testing time: {time.time() - start_time:.2f} seconds")
 
-       
+    # Plotting accuracies
+    plt.plot(range(1, args.epochs + 1), training_accuracy, label='Training Accuracy')
+    plt.plot(range(1, args.epochs + 1), validation_accuracy, label='Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Training and Validation Accuracies')
+    plt.legend()
+    plt.show()
+
+    plt.plot(range(1, args.epochs + 1), f1_scores, label='Training Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('F1 Score')
+    plt.title('F1 Score Over Epochs')
+    plt.legend()
+    plt.show()
