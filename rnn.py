@@ -93,7 +93,7 @@ if __name__ == "__main__":
     parser.add_argument("--train_data", required = True, help = "path to training data")
     parser.add_argument("--val_data", required = True, help = "path to validation data")
     parser.add_argument("--test_data", default = "to fill", help = "path to test data")
-    parser.add_argument('--do_train', action='store_true')
+    parser.add_argument('--do_train', action ='store_true')
     args = parser.parse_args()
 
     print("========== Loading data ==========")
