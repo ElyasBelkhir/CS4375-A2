@@ -11,7 +11,7 @@ from tqdm import tqdm
 import json
 from argparse import ArgumentParser
 import matplotlib.pyplot as plt
-from sklearn.metrics import f1_score, confusion_matrix
+from sklearn.metrics import f1_score
 
 
 unk = '<UNK>'
