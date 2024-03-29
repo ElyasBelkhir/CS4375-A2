@@ -12,6 +12,8 @@ import json
 import string
 from argparse import ArgumentParser
 import pickle
+import matplotlib.pyplot as plt
+from sklearn.metrics import f1_score
 
 unk = '<UNK>'
 # Consult the PyTorch documentation for information on the functions used below:
@@ -116,6 +118,10 @@ if __name__ == "__main__":
     last_train_accuracy = 0
     last_validation_accuracy = 0
 
+    training_accuracy = []
+    validation_accuracy = []
+    f1_scores = []
+
     while epoch < args.epochs and not stopping_condition:
         random.shuffle(train_data)
         model.train()
@@ -169,6 +175,7 @@ if __name__ == "__main__":
         print("Training completed for epoch {}".format(epoch + 1))
         print("Training accuracy for epoch {}: {}".format(epoch + 1, correct / total))
         trainning_accuracy = correct/total
+        training_accuracy.append(trainning_accuracy)
 
 
         model.eval()
@@ -177,7 +184,8 @@ if __name__ == "__main__":
         random.shuffle(valid_data)
         print("Validation started for epoch {}".format(epoch + 1))
         valid_data = valid_data
-
+        predicted_labels = []
+        true_labels = []
         for input_words, gold_label in tqdm(valid_data):
             input_words = " ".join(input_words)
             input_words = input_words.translate(input_words.maketrans("", "", string.punctuation)).split()
@@ -187,12 +195,17 @@ if __name__ == "__main__":
             vectors = torch.tensor(vectors).view(len(vectors), 1, -1)
             output = model(vectors)
             predicted_label = torch.argmax(output)
+            predicted_labels.append(predicted_label.item())
+            true_labels.append(gold_label)
             correct += int(predicted_label == gold_label)
             total += 1
             # print(predicted_label, gold_label)
         print("Validation completed for epoch {}".format(epoch + 1))
         print("Validation accuracy for epoch {}: {}".format(epoch + 1, correct / total))
-        validation_accuracy = correct/total
+        validation_accuracy.append(correct/total)
+        f1 = f1_score(true_labels, predicted_labels, average='macro')
+        f1_scores.append(f1)
+        print("F1 Score for epoch {}: {}".format(epoch + 1, f1))
 
         '''if validation_accuracy < last_validation_accuracy and trainning_accuracy > last_train_accuracy:
             stopping_condition=True
@@ -211,3 +224,18 @@ if __name__ == "__main__":
     # You may find it beneficial to keep track of training accuracy or training loss;
 
     # Think about how to update the model and what this entails. Consider ffnn.py and the PyTorch documentation for guidance
+# Plotting accuracies
+    plt.plot(range(1, args.epochs + 1), training_accuracy, label='Training Accuracy')
+    plt.plot(range(1, args.epochs + 1), validation_accuracy, label='Validation Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Training and Validation Accuracies')
+    plt.legend()
+    plt.show()
+
+    plt.plot(range(1, args.epochs + 1), f1_scores, label='Training Accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('F1 Score')
+    plt.title('F1 Score Over Epochs')
+    plt.legend()
+    plt.show()
