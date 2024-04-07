@@ -236,6 +236,7 @@ if __name__ == "__main__":
     plt.legend()
     plt.show()
 
+
     plt.plot(range(1, args.epochs + 1), f1_scores, label='Training Accuracy')
     plt.xlabel('Epochs')
     plt.ylabel('F1 Score')
