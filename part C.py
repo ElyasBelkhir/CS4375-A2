@@ -210,7 +210,6 @@ if __name__ == "__main__":
 
             val_accuracy = correct / total
             validation_accuracy.append(val_accuracy)
-            results.append([hidden_dim, val_accuracy])
 
             print("Validation completed for epoch {}".format(epoch + 1))
             print("Validation accuracy for epoch {}: {}".format(epoch + 1, correct / total))
@@ -241,6 +240,8 @@ if __name__ == "__main__":
             print("Testing completed")
             print(f"Testing time: {time.time() - start_time:.2f} seconds")
 
+        results.append([hidden_dim, accuracy])
+
         # Plotting accuracies
         plt.plot(range(1, args.epochs + 1), training_accuracy, label='Training Accuracy')
         plt.plot(range(1, args.epochs + 1), validation_accuracy, label='Validation Accuracy')
@@ -258,4 +259,4 @@ if __name__ == "__main__":
         plt.show()
 
     # Display results as a table
-    print(tabulate(results, headers=['Hidden Dimension', 'Validation Accuracy'], tablefmt='grid'))
+    print(tabulate(results, headers=['Hidden Dimension', 'Test Accuracy'], tablefmt='grid'))
