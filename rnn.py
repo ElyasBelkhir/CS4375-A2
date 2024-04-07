@@ -61,7 +61,7 @@ def load_data(train_data, val_data, test_data):
     for elt in testing:
         tes.append((elt["text"].split(),int(elt["stars"]-1)))
     count = {}
-    
+
     return tra, val, tes
 
 def evaluate_model(model, data, word_embedding):
@@ -70,13 +70,13 @@ def evaluate_model(model, data, word_embedding):
     total = 0
     embedding_dim = 50  # Ensure this matches your embedding dimensions
     unk_embedding = word_embedding.get('<UNK>', np.random.rand(embedding_dim))
-    
+
     for input_words, gold_label in data:
         input_words = " ".join(input_words)
         input_words = input_words.translate(str.maketrans("", "", string.punctuation)).split()
         vectors = [word_embedding.get(i.lower(), unk_embedding) for i in input_words]
         vectors = torch.tensor(vectors, dtype=torch.float).view(len(vectors), 1, -1)
-        
+
         output = model(vectors)
         predicted_label = torch.argmax(output, dim=1)
         correct += int(predicted_label == gold_label)
@@ -121,6 +121,8 @@ if __name__ == "__main__":
     training_accuracy = []
     validation_accuracy = []
     f1_scores = []
+
+    results = []
 
     while epoch < args.epochs and not stopping_condition:
         random.shuffle(train_data)
@@ -203,6 +205,7 @@ if __name__ == "__main__":
         print("Validation completed for epoch {}".format(epoch + 1))
         print("Validation accuracy for epoch {}: {}".format(epoch + 1, correct / total))
         validation_accuracy.append(correct/total)
+        results.append(correct/total)
         f1 = f1_score(true_labels, predicted_labels, average='macro')
         f1_scores.append(f1)
         print("F1 Score for epoch {}: {}".format(epoch + 1, f1))
@@ -239,3 +242,7 @@ if __name__ == "__main__":
     plt.title('F1 Score Over Epochs')
     plt.legend()
     plt.show()
+
+    print("Validation accuracies after all epochs:")
+    for epoch, acc in enumerate(validation_accuracy, 1):
+        print(f"Epoch {epoch}: {acc}")
