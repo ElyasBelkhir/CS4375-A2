@@ -23,7 +23,8 @@ class RNN(nn.Module):
         super(RNN, self).__init__()
         self.h = h
         self.numOfLayer = 1
-        self.rnn = nn.RNN(input_dim, h, self.numOfLayer, nonlinearity='tanh')
+        self.rnn = nn.RNN(input_dim, h, self.numOfLayer)
+        self.sigmoid = nn.ReLU()
         self.W = nn.Linear(h, 3)
         self.softmax = nn.LogSoftmax(dim=1)
         self.loss = nn.NLLLoss()
@@ -34,6 +35,7 @@ class RNN(nn.Module):
     def forward(self, inputs):
         # [to fill] obtain hidden layer representation (https://pytorch.org/docs/stable/generated/torch.nn.RNN.html)
         _, hidden = self.rnn(inputs)
+        hidden = self.sigmoid(hidden)
         # [to fill] obtain output layer representations
         output = self.W(hidden.squeeze(0))
         # [to fill] sum over output
@@ -176,7 +178,7 @@ if __name__ == "__main__":
         print(loss_total/loss_count)
         print("Training completed for epoch {}".format(epoch + 1))
         print("Training accuracy for epoch {}: {}".format(epoch + 1, correct / total))
-        trainning_accuracy = correct/total
+        trainning_accuracy = 1 - correct/total
         training_accuracy.append(trainning_accuracy)
 
 
@@ -228,19 +230,17 @@ if __name__ == "__main__":
 
     # Think about how to update the model and what this entails. Consider ffnn.py and the PyTorch documentation for guidance
 # Plotting accuracies
-    plt.plot(range(1, args.epochs + 1), training_accuracy, label='Training Accuracy')
-    plt.plot(range(1, args.epochs + 1), validation_accuracy, label='Validation Accuracy')
+    plt.plot(range(1, args.epochs + 1), training_accuracy, label='Training Loss')
     plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.title('Training and Validation Accuracies')
+    plt.ylabel('Loss')
+    plt.title('Training Loss')
     plt.legend()
     plt.show()
 
-
-    plt.plot(range(1, args.epochs + 1), f1_scores, label='Training Accuracy')
+    plt.plot(range(1, args.epochs + 1), validation_accuracy, label='Validation Accuracy')
     plt.xlabel('Epochs')
-    plt.ylabel('F1 Score')
-    plt.title('F1 Score Over Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Validation Accuracy')
     plt.legend()
     plt.show()
 
